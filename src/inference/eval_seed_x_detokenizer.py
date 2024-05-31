@@ -25,7 +25,7 @@ visual_encoder_cfg = OmegaConf.load(visual_encoder_cfg_path)
 discrete_model_cfg = OmegaConf.load(discrete_model_cfg_path)
 image_transform_cfg = OmegaConf.load(image_transform_cfg_path)
 
-diffusion_model_path = 'pretrained/stable-diffusion-xl-base-1.0'
+diffusion_model_path = 'stabilityai/stable-diffusion-xl-base-1.0'
 
 noise_scheduler = EulerDiscreteScheduler.from_pretrained(diffusion_model_path, subfolder="scheduler")
 tokenizer = None
