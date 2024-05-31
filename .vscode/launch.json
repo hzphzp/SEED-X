@@ -2,10 +2,26 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: InstructPix2Pix Inference",
+            "name": "Python: eval_seed_x_detokenizer",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/src/inference/eval_seed_x_detokenizer.py",
+            "args": [], // 在这里添加任何需要的命令行参数
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Python: eval_seed_x_detokenizer_with_condition",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/inference/eval_seed_x_detokenizer_with_condition.py",
+            "args": [], // 在这里添加任何需要的命令行参数
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Python: eval_img2text_seed_x",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/inference/eval_img2text_seed_x.py",
             "args": [], // 在这里添加任何需要的命令行参数
             "console": "integratedTerminal"
         }
