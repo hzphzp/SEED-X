@@ -72,7 +72,7 @@ agent_cfg_path = 'configs/clm_models/agent_seed_x.yaml'
 adapter_cfg_path = 'configs/sdxl_adapter/sdxl_qwen_vit_resampler_l4_q64_pretrain_no_normalize.yaml'
 discrete_model_cfg_path = 'configs/discrete_model/discrete_identity.yaml'
 
-diffusion_model_path = 'pretrained/stable-diffusion-xl-base-1.0'
+diffusion_model_path = 'stabilityai/stable-diffusion-xl-base-1.0'
 
 tokenizer_cfg = OmegaConf.load(tokenizer_cfg_path)
 tokenizer = hydra.utils.instantiate(tokenizer_cfg)
@@ -225,6 +225,7 @@ with torch.no_grad():
                                 ids_cmp_mask=ids_cmp_mask,
                                 max_new_tokens=512,
                                 num_img_gen_tokens=num_img_out_tokens)
+# print()
 print(output['text'])
 bbox = extract_box(output['text'])
 if bbox is not None:
