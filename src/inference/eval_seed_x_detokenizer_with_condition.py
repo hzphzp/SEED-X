@@ -8,9 +8,12 @@ from diffusers import AutoencoderKL, UNet2DConditionModel, EulerDiscreteSchedule
 
 pyrootutils.setup_root(__file__, indicator='.project-root', pythonpath=True)
 
-condition_image_path = 'demo_images/men_condition.jpg'
-target_image_path = 'demo_images/men.jpg'
-save_path = 'vis/men_recon_with_condition.jpg'
+# condition_image_path = 'demo_images/men_condition.jpg'
+# target_image_path = 'demo_images/men.jpg'
+# save_path = 'vis/men_recon_with_condition.jpg'
+image_dir = "images"
+save_dir = "recon_images_with_condition"
+os.makedirs(save_dir, exist_ok=True)
 
 device = 'cuda'
 dtype = torch.float16
@@ -26,7 +29,7 @@ visual_encoder_cfg = OmegaConf.load(visual_encoder_cfg_path)
 discrete_model_cfg = OmegaConf.load(discrete_model_cfg_path)
 image_transform_cfg = OmegaConf.load(image_transform_cfg_path)
 
-diffusion_model_path = 'pretrained/stable-diffusion-xl-base-1.0'
+diffusion_model_path = 'stabilityai/stable-diffusion-xl-base-1.0'
 
 noise_scheduler = EulerDiscreteScheduler.from_pretrained(diffusion_model_path, subfolder="scheduler")
 tokenizer = None
@@ -55,10 +58,19 @@ adapter.init_pipe(vae=vae,
                   dtype=dtype,
                   device=device)
 
-condition_image = Image.open(condition_image_path).convert('RGB')
-condition_image  = condition_image.resize((1024, 1024))
+for image_name in os.listdir(image_dir):
+    image_path = os.path.join(image_dir, image_name)
+    condition_image_path = image_path
+    save_path = os.path.join(save_dir, image_name)
+    condition_image = Image.open(condition_image_path).convert('RGB').resize((1024, 1024))
+    target_image = Image.open(image_path).convert('RGB')
+    generated_images = adapter.generate(target_image, latent_image=condition_image, num_inference_steps=50)
+    generated_images[0].save(save_path)
 
-target_image = Image.open(target_image_path).convert('RGB')
-generated_images = adapter.generate(target_image, latent_image=condition_image, num_inference_steps=50)
+# condition_image = Image.open(condition_image_path).convert('RGB')
+# condition_image  = condition_image.resize((1024, 1024))
 
-generated_images[0].save(save_path)
+# target_image = Image.open(target_image_path).convert('RGB')
+# generated_images = adapter.generate(target_image, latent_image=condition_image, num_inference_steps=50)
+
+# generated_images[0].save(save_path)

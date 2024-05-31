@@ -8,8 +8,11 @@ from diffusers import AutoencoderKL, UNet2DConditionModel, EulerDiscreteSchedule
 
 pyrootutils.setup_root(__file__, indicator='.project-root', pythonpath=True)
 
-image_path = 'demo_images/men.jpg'
-save_path = 'vis/men_recon.jpg'
+# image_path = 'demo_images/men.jpg'
+# save_path = 'vis/men_recon.jpg'
+image_dir = 'images'
+save_dir = 'recon_images'
+os.makedirs(save_dir, exist_ok=True)
 
 device = 'cuda'
 dtype = torch.float16
@@ -55,7 +58,15 @@ adapter.init_pipe(vae=vae,
                   dtype=dtype,
                   device=device)
 
-image = Image.open(image_path).convert('RGB')
-print(f'image_path: {image_path}')
-generated_images = adapter.generate(image, num_inference_steps=50)
-generated_images[0].save(save_path)
+
+for image_name in os.listdir(image_dir):
+    image_path = os.path.join(image_dir, image_name)
+    save_path = os.path.join(save_dir, image_name)
+    image = Image.open(image_path).convert('RGB')
+    print(f'image_path: {image_path}')
+    generated_images = adapter.generate(image, num_inference_steps=50)
+    generated_images[0].save(save_path)
+# image = Image.open(image_path).convert('RGB')
+# print(f'image_path: {image_path}')
+# generated_images = adapter.generate(image, num_inference_steps=50)
+# generated_images[0].save(save_path)
