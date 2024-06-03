@@ -30,7 +30,7 @@ agent_cfg_path = 'configs/clm_models/agent_seed_x.yaml'
 adapter_cfg_path = 'configs/sdxl_adapter/sdxl_qwen_vit_resampler_l4_q64_pretrain_no_normalize.yaml'
 discrete_model_cfg_path = 'configs/discrete_model/discrete_identity.yaml'
 
-diffusion_model_path = 'pretrained/stable-diffusion-xl-base-1.0'
+diffusion_model_path = 'stabilityai/stable-diffusion-xl-base-1.0'
 
 save_dir = 'vis'
 os.makedirs(save_dir, exist_ok=True)
