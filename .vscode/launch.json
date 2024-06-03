@@ -7,7 +7,8 @@
             "request": "launch",
             "program": "${workspaceFolder}/src/inference/eval_seed_x_detokenizer.py",
             "args": [], // 在这里添加任何需要的命令行参数
-            "console": "integratedTerminal"
+            "console": "integratedTerminal",
+            "justMyCode": true,
         },
         {
             "name": "Python: eval_seed_x_detokenizer_with_condition",
@@ -15,7 +16,8 @@
             "request": "launch",
             "program": "${workspaceFolder}/src/inference/eval_seed_x_detokenizer_with_condition.py",
             "args": [], // 在这里添加任何需要的命令行参数
-            "console": "integratedTerminal"
+            "console": "integratedTerminal",
+            "justMyCode": true,
         },
         {
             "name": "Python: eval_img2text_seed_x",
@@ -23,7 +25,26 @@
             "request": "launch",
             "program": "${workspaceFolder}/src/inference/eval_img2text_seed_x.py",
             "args": [], // 在这里添加任何需要的命令行参数
-            "console": "integratedTerminal"
-        }
+            "console": "integratedTerminal",
+            "justMyCode": true,
+        },
+        {
+            "name": "Python: eval_text2img_seed_x",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/inference/eval_text2img_seed_x.py",
+            "args": [], // 在这里添加任何需要的命令行参数
+            "console": "integratedTerminal",
+            "justMyCode": true,
+        },
+        {
+            "name": "Python: eval_img2edit_seed_x_edit",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/inference/eval_img2edit_seed_x_edit.py",
+            "args": [], // 在这里添加任何需要的命令行参数
+            "console": "integratedTerminal",
+            "justMyCode": true,
+        },
     ]
 }
