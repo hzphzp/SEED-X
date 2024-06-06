@@ -47,15 +47,11 @@
             "justMyCode": true,
         },
         {
-            "name": "Train SEED-X SFT Edit",
+            "name": "Train SEED-X SFT Edit (python launch)",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/src/train/train_seed_x_sft.py",
             "console": "integratedTerminal",
-            "env": {
-                "PYTHONPATH": "${workspaceFolder}/proj/peft/src:${env:PYTHONPATH}",
-                "OUTPUT_PATH": "${env:HOME}/SEED-X/train_output/seed_x_sft_edit"
-            },
             "args": [
                 "--image_transform", "${workspaceFolder}/configs/processer/qwen_448_transform.yaml",
                 "--tokenizer", "${workspaceFolder}/configs/tokenizer/clm_llama_tokenizer_224loc_anyres.yaml",
@@ -63,7 +59,7 @@
                 "--llm_model", "${workspaceFolder}/configs/clm_models/llm_seed_x_lora.yaml",
                 "--agent_model", "${workspaceFolder}/configs/clm_models/agent_seed_x.yaml",
                 "--train_dataset", "${workspaceFolder}/configs/data/sft_edit.yaml",
-                "--output_dir", "${env:OUTPUT_PATH}",
+                "--output_dir", "${env:HOME}/SEED-X/train_output/seed_x_sft_edit_debug/",
                 "--expr_name", "seed_x_sft_edit",
                 "--learning_rate", "1e-4",
                 "--batch_size", "50",
@@ -82,8 +78,55 @@
                 "--dataloader_num_workers", "4",
                 "--deepspeed_plugin", "${workspaceFolder}/configs/accelerate/deepspeed_stage_3.yaml"
             ],
-            "preLaunchTask": "setup_output_dir"
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/proj/peft/src:${env:PYTHONPATH}",
+                "OUTPUT_PATH": "${env:HOME}/SEED-X/train_output/seed_x_sft_edit_debug/",
+                "other": "test_other",
+            },
         },
-        
+        {
+            "name": "Train SEED-X SFT Edit (torchrun launch)",
+            "type": "python",
+            "request": "launch",
+            "program": "/home/t-zhiphuang/miniconda3/envs/SEED-X/bin/torchrun", // or the path to your torchrun executable  
+            "console": "integratedTerminal",  
+            "args": [  
+                "--nproc_per_node=4",  
+                "--nnodes=1",  
+                "--node_rank=0",  
+                "--master_addr=localhost",  
+                "--master_port=11111",  
+                "${workspaceFolder}/src/train/train_seed_x_sft.py",
+                "--image_transform", "${workspaceFolder}/configs/processer/qwen_448_transform.yaml",
+                "--tokenizer", "${workspaceFolder}/configs/tokenizer/clm_llama_tokenizer_224loc_anyres.yaml",
+                "--visual_encoder", "${workspaceFolder}/configs/visual_encoder/qwen_vitg_448.yaml",
+                "--llm_model", "${workspaceFolder}/configs/clm_models/llm_seed_x_lora.yaml",
+                "--agent_model", "${workspaceFolder}/configs/clm_models/agent_seed_x.yaml",
+                "--train_dataset", "${workspaceFolder}/configs/data/sft_edit.yaml",
+                "--output_dir", "${env:HOME}/SEED-X/train_output/seed_x_sft_edit_debug/",
+                "--expr_name", "seed_x_sft_edit",
+                "--learning_rate", "1e-4",
+                "--batch_size", "50",
+                "--weight_decay", "0.05",
+                "--adam_beta1", "0.9",
+                "--adam_beta2", "0.98",
+                "--adam_epsilon", "1e-6",
+                "--gradient_accumulation_steps", "2",
+                "--mixed_precision", "bf16",
+                "--num_train_epochs", "10",
+                "--max_steps", "20000",
+                "--save_steps", "1000",
+                "--lr_scheduler_type", "cosine",
+                "--warmup_steps", "500",
+                "--min_lr_ratio", "0.05",
+                "--dataloader_num_workers", "4",
+                "--deepspeed_plugin", "${workspaceFolder}/configs/accelerate/deepspeed_stage_3.yaml"
+            ],
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/proj/peft/src:${env:PYTHONPATH}",
+                "OUTPUT_PATH": "${env:HOME}/SEED-X/train_output/seed_x_sft_edit_debug/",
+                "other": "test_other",
+            },
+        },
     ]
 }
