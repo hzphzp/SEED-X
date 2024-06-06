@@ -10,3 +10,6 @@ pyrootutils
 xformers>=0.0.20
 accelerate
 transformers_stream_generator
+torchdata
+peft
+braceexpand
