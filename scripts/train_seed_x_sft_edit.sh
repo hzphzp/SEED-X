@@ -1,14 +1,14 @@
 
-PROJ_PATH='SEED-X'
+PROJ_PATH='.'
 exp_name='seed_x_sft_edit'
-OUTPUT_PATH=SEED-X/train_output/${exp_name}
+OUTPUT_PATH=~/SEED-X/train_output/${exp_name}
 
 mkdir -p $OUTPUT_PATH
 
-export PYTHONPATH=SEED-X/proj/peft/src:$PYTHONPATH
+export PYTHONPATH=$PROJ_PATH/proj/peft/src:$PYTHONPATH
 
 #torchrun --nproc_per_node=$HOST_GPU_NUM --nnodes=$HOST_NUM --master_addr=$CHIEF_IP --master_port=20008 --node_rank=$INDEX \
-torchrun --nproc_per_node=8 \
+torchrun --nproc_per_node=4 \
     ${PROJ_PATH}/src/train/train_seed_x_sft.py \
     --image_transform ${PROJ_PATH}/configs/processer/qwen_448_transform.yaml \
     --tokenizer ${PROJ_PATH}/configs/tokenizer/clm_llama_tokenizer_224loc_anyres.yaml \

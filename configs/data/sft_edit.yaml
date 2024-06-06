@@ -4,8 +4,8 @@ datapipes:
 
   - _target_: src.data.sft_clm.build_single_turn_edit_datapipes
     data_dir: 
-      - data/SEED-Data-Edit-Part1-Openimages/auto_editing/openimages/annotations
-    image_dir: data/SEED-Data-Edit-Part1-Openimages/auto_editing/openimages/images
+      - data/AILab-CVC/SEED-Data-Edit-Part1-Openimages/auto_editing/openimages/annotations
+    image_dir: data/AILab-CVC/SEED-Data-Edit-Part1-Openimages/auto_editing/openimages/images
     max_length: 320
     batch_size: 6
     instruction_prompt: "[INST] {instruction} [/INST]\n"
@@ -24,8 +24,8 @@ datapipes:
 
   - _target_: src.data.sft_clm.build_single_turn_edit_datapipes
     data_dir: 
-      - data/SEED-Data-Edit-Part1-Unsplash/auto_editing/unsplash/annotations
-    image_dir: data/SEED-Data-Edit-Part1-Unsplash/auto_editing/unsplash/images
+      - data/AILab-CVC/SEED-Data-Edit-Part1-Unsplash/auto_editing/unsplash/annotations
+    image_dir: data/AILab-CVC/SEED-Data-Edit-Part1-Unsplash/auto_editing/unsplash/images
     max_length: 320
     batch_size: 6
     instruction_prompt: "[INST] {instruction} [/INST]\n"

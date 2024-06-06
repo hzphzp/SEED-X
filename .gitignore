@@ -1,3 +1,5 @@
 pretrained/
 .DS_Store
 *.pyc
+data/
+train_output/
