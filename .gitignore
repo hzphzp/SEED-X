@@ -3,3 +3,4 @@ pretrained/
 *.pyc
 data/
 train_output/
+SEED-Bench2/
