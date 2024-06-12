@@ -47,6 +47,24 @@
             "justMyCode": true,
         },
         {
+            "name": "Python: eval_img2edit_seed_x_edit_wocat",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/inference/eval_img2edit_seed_x_edit_wocat.py",
+            "args": [], // 在这里添加任何需要的命令行参数
+            "console": "integratedTerminal",
+            "justMyCode": true,
+        },
+        {
+            "name": "Python: eval_img2edit_seed_x_edit_wocat_multiple_images_input",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/inference/eval_img2edit_seed_x_edit_wocat_multiple_images_input.py",
+            "args": [], // 在这里添加任何需要的命令行参数
+            "console": "integratedTerminal",
+            "justMyCode": true,
+        },
+        {
             "name": "Train SEED-X SFT Edit (python launch)",
             "type": "python",
             "request": "launch",

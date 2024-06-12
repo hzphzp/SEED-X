@@ -24,7 +24,7 @@ dtype = torch.float16
 dtype_str = 'fp16'
 num_img_in_tokens = 64
 num_img_out_tokens = 64
-instruction_prompt = '[INST] {instruction} [/INST]\n'
+instruction_prompt = '[INST] {instruction} [/INST]\n <img>'
 
 save_dir = 'vis'
 os.makedirs(save_dir, exist_ok=True)
@@ -32,9 +32,9 @@ os.makedirs(save_dir, exist_ok=True)
 tokenizer_cfg_path = 'configs/tokenizer/clm_llama_tokenizer_224loc_anyres.yaml'
 image_transform_cfg_path = 'configs/processer/qwen_448_transform.yaml'
 visual_encoder_cfg_path = 'configs/visual_encoder/qwen_vitg_448.yaml'
-llm_cfg_path = 'configs/clm_models/llm_seed_x_edit.yaml'
-agent_cfg_path = 'configs/clm_models/agent_seed_x_edit.yaml'
-adapter_cfg_path = 'configs/sdxl_adapter/sdxl_qwen_vit_resampler_l4_q64_full_with_latent_image_pretrain_no_normalize.yaml'
+llm_cfg_path = 'configs/clm_models/llm_seed_x_i.yaml'
+agent_cfg_path = 'configs/clm_models/agent_seed_x_i.yaml'
+adapter_cfg_path = 'configs/sdxl_adapter/sdxl_qwen_vit_resampler_l4_q64_pretrain_no_normalize.yaml'
 discrete_model_cfg_path = 'configs/discrete_model/discrete_identity.yaml'
 
 diffusion_model_path = 'stabilityai/stable-diffusion-xl-base-1.0'
@@ -77,6 +77,7 @@ adapter.init_pipe(vae=vae,
                 scheduler=noise_scheduler,
                 visual_encoder=visual_encoder,
                 image_transform=image_transform,
+                discrete_model=discrete_model,
                 dtype=dtype,
                 device=device)
 
@@ -97,30 +98,42 @@ grid_pinpoints = grid_pinpoints
 # image_path = 'demo_images/car.jpg'
 # instruction = 'Make it under the sunset'
 
-# image_path = "images/building1.jpg"
-# # 广州塔, 从仰拍视角变成俯拍视角
-# instruction = "Make the Guangzhou Tower in this picture a bird's-eye view."
+images_path = [
+    "images/luxun1.jpg",
+    "images/luxun7.png",
+    "images/luxun5.jpg",
+    "images/luxun3.jpg",
+    "images/luxun4.jpg",
+]
+instruction = "Refer to the multiple portraits of Lu Xun I give you to generate a picture of Lu Xun riding a bicycle."
 
-image_path = "images/luxun1.jpg"
-# instruction = "Refer to the portrait of Lu Xun in this picture to generate a picture of Lu Xun riding a bicycle."
-instruction = "Refer to the portrait of Lu Xun in this picture to generate a picture of Lu Xun riding a bicycle. Only focus on the face shape in the reference picture. Be careful not to retain the style of the reference picture. Try to make the style of the generated picture colorful, like a real HD photo."
-
-image = Image.open(image_path).convert('RGB')
-source_image = image.resize((1024, 1024))
-
-image_tensor, patch_pos_tensor = process_anyres_image(image, image_transform, grid_pinpoints, base_resolution)
-embeds_cmp_mask = torch.tensor([True]*image_tensor.shape[0]).to(device, dtype=torch.bool)
-
-patch_pos = [patch_pos_tensor]
-patch_position = torch.cat(patch_pos, dim=0)
-
-image_tensor = image_tensor.to(device, dtype=dtype)
-
-patch_length = image_tensor.shape[0]
 image_tokens = ''
-for _ in range(patch_length-1):
-    image_tokens +=  BOP_TOKEN + ''.join(IMG_TOKEN.format(int(item)) for item in range(num_img_in_tokens)) + EOP_TOKEN
-image_tokens += BOI_TOKEN + ''.join(IMG_TOKEN.format(int(item)) for item in range(num_img_in_tokens)) + EOI_TOKEN
+image_tensor_list = []
+embeds_cmp_mask_list = []
+patch_pos_tensor_list = []
+for image_path in images_path:
+    image = Image.open(image_path).convert('RGB')
+    source_image = image.resize((1024, 1024))
+
+    image_tensor, patch_pos_tensor = process_anyres_image(image, image_transform, grid_pinpoints, base_resolution)
+    embeds_cmp_mask = torch.tensor([True]*image_tensor.shape[0]).to(device, dtype=torch.bool)
+    embeds_cmp_mask_list.append(embeds_cmp_mask)
+    image_tensor_list.append(image_tensor)
+    patch_pos_tensor_list.append(patch_pos_tensor)
+
+    # patch_pos = [patch_pos_tensor]
+    # patch_position = torch.cat(patch_pos, dim=0)
+
+    image_tensor = image_tensor.to(device, dtype=dtype)
+
+    patch_length = image_tensor.shape[0]
+
+    for _ in range(patch_length-1):
+        image_tokens +=  BOP_TOKEN + ''.join(IMG_TOKEN.format(int(item)) for item in range(num_img_in_tokens)) + EOP_TOKEN
+    image_tokens += BOI_TOKEN + ''.join(IMG_TOKEN.format(int(item)) for item in range(num_img_in_tokens)) + EOI_TOKEN
+    
+embeds_cmp_mask = torch.cat(embeds_cmp_mask_list, dim=0)
+patch_position = torch.cat(patch_pos_tensor_list, dim=0)
 
 prompt = instruction_prompt.format_map({'instruction': image_tokens + instruction})
 
@@ -141,7 +154,8 @@ input_ids = input_ids.unsqueeze(0)
 ids_cmp_mask = ids_cmp_mask.unsqueeze(0)
 
 with torch.no_grad():
-    image_embeds = visual_encoder(image_tensor)
+    image_embeds_list = [visual_encoder(image_tensor) for image_tensor in image_tensor_list]
+    image_embeds = torch.cat(image_embeds_list, dim=0)
     output = agent_model.generate(tokenizer=tokenizer,
                                 input_ids=input_ids,
                                 image_embeds=image_embeds,
@@ -150,12 +164,13 @@ with torch.no_grad():
                                 ids_cmp_mask=ids_cmp_mask,
                                 max_new_tokens=512,
                                 num_img_gen_tokens=num_img_out_tokens)
+print(output)
 text = re.sub('<[^>]*>', '', output['text'])
 print(text)
 
 if output['has_img_output']:
-    images = adapter.generate(image_embeds=output['img_gen_feat'], latent_image=source_image, num_inference_steps=50)
+    images = adapter.generate(image_embeds=output['img_gen_feat'], num_inference_steps=50)
 
-    save_path = os.path.join(save_dir, str(len(os.listdir(save_dir))) + '_' + instruction[:15] + '.jpg')
+    save_path = os.path.join(save_dir, str(len(os.listdir(save_dir))) + '_' + instruction + '.jpg')
     images[0].save(save_path)
 torch.cuda.empty_cache()
