@@ -1,4 +1,10 @@
 import torch
+try:
+    import torch_npu
+    from torch_npu.contrib import transfer_to_npu
+    print('use Ascend NPU')
+except:
+    print('use NVIDIA GPU')
 from transformers import AutoModelForCausalLM
 
 torch.manual_seed(1234)
