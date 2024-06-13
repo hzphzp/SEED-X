@@ -1,5 +1,11 @@
 import hydra
 import torch
+try:
+    import torch_npu
+    from torch_npu.contrib import transfer_to_npu
+    print('use Ascend NPU')
+except:
+    print('use NVIDIA GPU')
 import os
 import pyrootutils
 from PIL import Image
