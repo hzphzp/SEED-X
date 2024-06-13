@@ -4,8 +4,10 @@ try:
     import torch_npu
     from torch_npu.contrib import transfer_to_npu
     print('use Ascend NPU')
+    use_npu = True
 except:
     print('use NVIDIA GPU')
+    use_npu = False
 import os
 import re
 import pyrootutils
@@ -25,7 +27,7 @@ IMG_TOKEN = '<img_{:05d}>'
 resolution_grids = ['1x1']
 base_resolution = 448
 
-device = 'cuda'
+device = 'cuda' if not use_npu else 'npu'
 dtype = torch.float16
 dtype_str = 'fp16'
 num_img_in_tokens = 64
