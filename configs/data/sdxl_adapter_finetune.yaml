@@ -1,0 +1,7 @@
+_target_: src.data.sft_clm.build_multi_datapipes
+_recursive_: False
+datapipes:
+  - _target_: src.data.laion.build_laion_tar_images_datapipelines
+    images_tar_dir: /mnt/wfs/mmshanghai8wfssh/project_mm-base-vision-tj/data/image/mllm/laion_hs_chong/oteam_images
+sample_weights:  
+  - 1.0
