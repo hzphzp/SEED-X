@@ -2,6 +2,12 @@ import hydra
 import pyrootutils
 import os
 import torch
+try:
+    import torch_npu
+    from torch_npu.contrib import transfer_to_npu
+    print('use Ascend NPU')
+except:
+    print('use NVIDIA GPU')
 from accelerate import Accelerator
 from accelerate.utils import ProjectConfiguration
 from tqdm.auto import tqdm
@@ -38,8 +44,8 @@ class ConfigPathArguments:
     tokenizer: Optional[str] = field(default=None, metadata={"help": "config path of tokenizer used to initialize tokenizer"})
     # model: Optional[str] = field(default=None, metadata={"help": "config path of llm"})
     visual_encoder: Optional[str] = field(default=None, metadata={"help": "config path of visual encoder"})
-    llm_model: Optional[str] = field(default=None, metadata={"help": "config path of llm"})
-    agent_model: Optional[str] = field(default=None, metadata={"help": "config path of agent"})
+    adapter_cfg_path: Optional[str] = field(default=None, metadata={"help": "config path of adapter"})
+    diffusion_model_path: Optional[str] = field(default=None, metadata={"help": "config path of sdxl weight"})
     train_dataset: Optional[str] = field(default=None, metadata={"help": "config path of training dataset"})
     fsdp_plugin: Optional[str] = field(default=None, metadata={"help": "config path of fsdp plugin"})
     deepspeed_plugin: Optional[str] = field(default=None, metadata={"help": "config path of deepspeed plugin"})
@@ -202,9 +208,9 @@ def train():
     # if cfg_path.fsdp_plugin is not None:
     #     agent_model = accelerator.prepare(agent_model)
 
-    adapter_cfg_path = 'configs/sdxl_adapter/sdxl_qwen_vit_resampler_l4_q64_pretrain_no_normalize_fullft.yaml'
+    adapter_cfg_path = cfg_path.adapter_cfg_path
     adapter_cfg = OmegaConf.load(adapter_cfg_path)
-    diffusion_model_path = 'stabilityai/stable-diffusion-xl-base-1.0'
+    diffusion_model_path = cfg_path.diffusion_model_path
 
     logger.info('init vae')
     vae = AutoencoderKL.from_pretrained(diffusion_model_path, subfolder="vae")
@@ -300,7 +306,7 @@ def train():
 
         for step, batch in enumerate(train_dataloader):
             with accelerator.accumulate(adapter):
-        
+                # TODO[huangzp]: batch 内没有这么多key
                 images = batch['images'].to(accelerator.device) if batch['images'] is not None else None
                 if images is not None:
                     embeds_gen_mask=batch['embeds_gen_mask'].to(accelerator.device)

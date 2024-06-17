@@ -25,7 +25,7 @@ except:
 pyrootutils.setup_root(__file__, indicator='.project-root', pythonpath=True)
 
 
-def build_laion_tar_images_datapipelines(images_tar_dir, *args, **kwargs):
+def build_laion_tar_images_datapipelines(images_tar_dir, image_transform, *args, **kwargs):
     if isinstance(images_tar_dir, str):
         data_dir = list(braceexpand(images_tar_dir))
     datapipe = dp.iter.FileLister(root=data_dir, masks='*.tar', recursive=True)
@@ -38,6 +38,10 @@ def build_laion_tar_images_datapipelines(images_tar_dir, *args, **kwargs):
     datapipe = datapipe.filter(lambda x: x[0].endswith('.jpg') or x[0].endswith('.jpeg') or x[0].endswith('.png'))
     # convert image content to PIL.Image
     datapipe = datapipe.map(lambda x: Image.open(io.BytesIO(x[1].read())).convert('RGB'))
+    # image_transform
+    datapipe = datapipe.map(lambda x: image_transform(x))
+    # add 'images' key to the data tuple
+    datapipe = datapipe.map(lambda x: {'images': x})
     return datapipe
 
 
