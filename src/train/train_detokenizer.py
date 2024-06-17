@@ -15,6 +15,9 @@ from torchdata.dataloader2 import DataLoader2, MultiProcessingReadingService, Di
 import gc
 import logging
 
+from PIL import Image
+from diffusers import AutoencoderKL, UNet2DConditionModel, EulerDiscreteScheduler
+
 print('============= train code')
 
 pyrootutils.setup_root(__file__, indicator='.project-root', pythonpath=True)
@@ -160,7 +163,7 @@ def train():
     if cfg_path.deepspeed_plugin is not None:
         accelerator.state.deepspeed_plugin.deepspeed_config['train_micro_batch_size_per_gpu'] = 8
 
-    # print('deepspeed config: ', accelerator.state.deepspeed_plugin.deepspeed_config)
+    # logging('deepspeed config: ', accelerator.state.deepspeed_plugin.deepspeed_config)
 
     os.makedirs(args.output_dir, exist_ok=True)
 
@@ -176,16 +179,16 @@ def train():
     visual_encoder = hydra.utils.instantiate(visual_encoder_cfg)
     logger.info('Load visual encoder done.')
 
-    llm_model_cfg = OmegaConf.load(cfg_path.llm_model)
-    llm_model = hydra.utils.instantiate(llm_model_cfg, torch_dtype=accelerator.mixed_precision)
-    llm_model.gradient_checkpointing_enable()
-    llm_model.config.use_cache = False
-    logger.info('Load llm model done.')
+    # llm_model_cfg = OmegaConf.load(cfg_path.llm_model)
+    # llm_model = hydra.utils.instantiate(llm_model_cfg, torch_dtype=accelerator.mixed_precision)
+    # llm_model.gradient_checkpointing_enable()
+    # llm_model.config.use_cache = False
+    # logger.info('Load llm model done.')
 
-    agent_model_cfg = OmegaConf.load(cfg_path.agent_model)
-    agent_model = hydra.utils.instantiate(agent_model_cfg, llm=llm_model)
-    logger.info('Load agent model done.')
-
+    # agent_model_cfg = OmegaConf.load(cfg_path.agent_model)
+    # agent_model = hydra.utils.instantiate(agent_model_cfg, llm=llm_model)
+    # logger.info('Load agent model done.')
+    
     weight_dtype = torch.float32
     if accelerator.mixed_precision == "fp16":
         weight_dtype = torch.float16
@@ -196,10 +199,38 @@ def train():
     logger.info('Freeze visual encoder...')
     visual_encoder.requires_grad_(False)
 
-    if cfg_path.fsdp_plugin is not None:
-        agent_model = accelerator.prepare(agent_model)
+    # if cfg_path.fsdp_plugin is not None:
+    #     agent_model = accelerator.prepare(agent_model)
 
-    optimizer = torch.optim.AdamW(agent_model.parameters(),
+    adapter_cfg_path = 'configs/sdxl_adapter/sdxl_qwen_vit_resampler_l4_q64_pretrain_no_normalize_fullft.yaml'
+    adapter_cfg = OmegaConf.load(adapter_cfg_path)
+    diffusion_model_path = 'stabilityai/stable-diffusion-xl-base-1.0'
+
+    logger.info('init vae')
+    vae = AutoencoderKL.from_pretrained(diffusion_model_path, subfolder="vae")
+    logger.info('init noise scheduler')
+    noise_scheduler = EulerDiscreteScheduler.from_pretrained(diffusion_model_path, subfolder="scheduler")
+    logger.info('init unet')
+    unet = UNet2DConditionModel.from_pretrained(diffusion_model_path, subfolder="unet")
+
+    logger.info('init ip adapter')
+    adapter = hydra.utils.instantiate(adapter_cfg, unet=unet)
+
+    adapter.init_pipe(vae=vae,
+                    scheduler=noise_scheduler,
+                    visual_encoder=visual_encoder,
+                    image_transform=image_transform,
+                    device=accelerator.device, 
+                    dtype=weight_dtype
+                    )
+    
+    logger.info('Freeze visual vae...')
+    vae.requires_grad_(False)
+
+    if cfg_path.fsdp_plugin is not None:
+        adapter = accelerator.prepare(adapter)
+
+    optimizer = torch.optim.AdamW(adapter.params_to_opt(),
                                   lr=args.learning_rate,
                                   betas=[args.adam_beta1, args.adam_beta2],
                                   eps=args.adam_epsilon,
@@ -219,23 +250,22 @@ def train():
     if cfg_path.fsdp_plugin is not None:
         optimizer, scheduler = accelerator.prepare(optimizer, scheduler)
     else:
-        agent_model, optimizer, scheduler = accelerator.prepare(agent_model, optimizer, scheduler)
+        adapter, optimizer, scheduler = accelerator.prepare(adapter, optimizer, scheduler)
     logger.info('Prepare accelerator done.')
 
-    config_record = merge_config(agent_model=agent_model_cfg,
-                                 llm_model=llm_model,
+    config_record = merge_config(adapter=adapter_cfg,
                                  visual_encoder=visual_encoder_cfg,
                                  image_transform=image_transform_cfg,
                                  tokenizer=tokenizer_cfg,
                                  train_dataset=train_dataset_cfg,
                                  train_args=args)
-    accelerator.init_trackers(project_name="MultiModal-LLM Research",
+    accelerator.init_trackers(project_name="Chinese Seed X",
                               init_kwargs={"wandb": {
                                   "config": config_record,
                                   "name": args.expr_name,
                                   "dir": args.output_dir,
                                 #   "project": 'MultiModal-LLM Research', 
-                                  "entity": 'lechatelia',
+                                  "entity": 'hzp1104',
                                   "resume": 'allow',
                                   'mode': 'offline'
                               }})
@@ -245,7 +275,7 @@ def train():
         torch.cuda.empty_cache()
         gc.collect()
 
-    num_params = trainable_params(agent_model)
+    num_params = trainable_params(adapter)
     logger.info("***** Running training *****")
     logger.info(f"  Total optimization steps = {args.max_steps}")
     logger.info(f"  Total trainable params = {num_params}")
@@ -258,7 +288,7 @@ def train():
         progress_bar.update(args.resume_steps)
 
     for epoch in range(args.num_train_epochs):
-        agent_model.train()
+        adapter.train()
         logger.info('Start new epoch')
 
         #  change seed 
@@ -269,7 +299,7 @@ def train():
         train_dataloader.seed(seed)
 
         for step, batch in enumerate(train_dataloader):
-            with accelerator.accumulate(agent_model):
+            with accelerator.accumulate(adapter):
         
                 images = batch['images'].to(accelerator.device) if batch['images'] is not None else None
                 if images is not None:
@@ -298,21 +328,52 @@ def train():
                     else:
                         image_embeds = None
 
-                output = agent_model(input_ids=batch['input_ids'].to(accelerator.device),
-                                     attention_mask=batch['attention_mask'].to(accelerator.device),
-                                     labels=batch['labels'].to(accelerator.device),
-                                     image_embeds=image_embeds,
-                                     patch_positions=patch_position if images is not None else None,
-                                     embeds_gen_mask=embeds_gen_mask
-                                     if batch['embeds_gen_mask'] is not None else None,
-                                     embeds_cmp_mask=embeds_cmp_mask
-                                     if batch['embeds_cmp_mask'] is not None else None,
-                                     ids_gen_mask=batch['ids_gen_mask'].to(accelerator.device),
-                                     ids_cmp_mask=batch['ids_cmp_mask'].to(accelerator.device))
+                # output = agent_model(input_ids=batch['input_ids'].to(accelerator.device),
+                #                      attention_mask=batch['attention_mask'].to(accelerator.device),
+                #                      labels=batch['labels'].to(accelerator.device),
+                #                      image_embeds=image_embeds,
+                #                      patch_positions=patch_position if images is not None else None,
+                #                      embeds_gen_mask=embeds_gen_mask
+                #                      if batch['embeds_gen_mask'] is not None else None,
+                #                      embeds_cmp_mask=embeds_cmp_mask
+                #                      if batch['embeds_cmp_mask'] is not None else None,
+                #                      ids_gen_mask=batch['ids_gen_mask'].to(accelerator.device),
+                #                      ids_cmp_mask=batch['ids_cmp_mask'].to(accelerator.device))
+                
+                # get latent and noise
+                latents = adapter.compute_vae_encodings(images)
+                noise = torch.randn_like(latents)
+                # add noise to latents
+                bsz = latents.shape[0]
+                timesteps = torch.randint(
+                        0, adapter.scheduler.config.num_train_timesteps, (bsz,), device=latents.device
+                    )
+                # get noisy_latents
+                noisy_latents = adapter.scheduler.add_noise(latents, noise, timesteps)
+                # get time ids
+                def compute_time_ids(original_size, crops_coords_top_left):
+                    # Adapted from pipeline.StableDiffusionXLPipeline._get_add_time_ids
+                    target_size = (args.resolution, args.resolution)
+                    add_time_ids = list(original_size + crops_coords_top_left + target_size)
+                    add_time_ids = torch.tensor([add_time_ids])
+                    add_time_ids = add_time_ids.to(accelerator.device, dtype=weight_dtype)
+                    return add_time_ids
+                add_time_ids = torch.cat(
+                    [compute_time_ids(s, c) for s, c in zip(batch["original_sizes"], batch["crop_top_lefts"])]
+                )
+                # def forward(self, noisy_latents, timesteps, image_embeds, text_embeds, noise, time_ids):
+                output = adapter(
+                                noisy_latents=noisy_latents,
+                                timesteps=timesteps,
+                                image_embeds=image_embeds,
+                                text_embeds=None,
+                                noise=noise,
+                                time_ids=add_time_ids
+                                )
                 loss = output['total_loss']
                 accelerator.backward(loss)
                 if accelerator.sync_gradients:
-                    accelerator.clip_grad_norm_(agent_model.parameters(), max_norm=args.max_grad_norm)
+                    accelerator.clip_grad_norm_(adapter.params_to_opt(), max_norm=args.max_grad_norm)
 
                 optimizer.step()
                 scheduler.step()

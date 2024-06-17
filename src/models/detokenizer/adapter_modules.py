@@ -92,6 +92,18 @@ class SDXLAdapter(nn.Module):
         else:
             self.discrete_model = None
         self.image_transform = image_transform
+        self.vae = vae.to(self.device, dtype=self.dtype)
+        self.scheduler = scheduler
+
+    @torch.inference_mode()
+    def compute_vae_encodings(self, images):
+        pixel_values = images
+        pixel_values = pixel_values.to(memory_format=torch.contiguous_format).float()
+        pixel_values = pixel_values.to(self.vae.device, dtype=self.vae.dtype)
+        with torch.no_grad():
+            model_input = self.vae.encode(pixel_values).latent_dist.sample()
+        model_input = model_input * self.vae.config.scaling_factor
+        return {"model_input": model_input}
 
     @torch.inference_mode()
     def get_image_embeds(self, image_pil=None, image_tensor=None, image_embeds=None, return_negative=True, image_size=448):
@@ -245,6 +257,8 @@ class SDXLAdapterWithLatentImage(SDXLAdapter):
 
         self.visual_encoder = visual_encoder.to(self.device, dtype=self.dtype)
         self.image_transform = image_transform
+        self.vae = vae.to(self.device, dtype=self.dtype)
+        self.scheduler = scheduler
         
     def generate(self,
                  image_pil=None,
