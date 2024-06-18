@@ -20,7 +20,7 @@ image_dir = 'images'
 save_dir = 'recon_images'
 os.makedirs(save_dir, exist_ok=True)
 
-device = 'cuda'
+device = 'npu'
 dtype = torch.float16
 
 adapter_cfg_path = 'configs/sdxl_adapter/sdxl_qwen_vit_resampler_l4_q64_pretrain_no_normalize.yaml'
@@ -34,7 +34,7 @@ visual_encoder_cfg = OmegaConf.load(visual_encoder_cfg_path)
 discrete_model_cfg = OmegaConf.load(discrete_model_cfg_path)
 image_transform_cfg = OmegaConf.load(image_transform_cfg_path)
 
-diffusion_model_path = 'stabilityai/stable-diffusion-xl-base-1.0'
+diffusion_model_path = '/mnt/wfs/mmshanghai8wfssh/project_mm-base-vision-tj/huangzp/pretrained/stabilityai/stable-diffusion-xl-base-1.0'
 
 noise_scheduler = EulerDiscreteScheduler.from_pretrained(diffusion_model_path, subfolder="scheduler")
 tokenizer = None
