@@ -37,9 +37,9 @@ image_transform = hydra.utils.instantiate(image_transform_cfg)
 def build_dataloader(dataset_cfg, image_transform, tokenizer, batch_size, dataloader_num_workers=4):
     dataset = hydra.utils.instantiate(dataset_cfg, image_transform=image_transform, tokenizer=tokenizer)
     # mp_service = MultiProcessingReadingService(num_workers=dataloader_num_workers)
-    dist_service = DistributedReadingService()
+    # dist_service = DistributedReadingService()
     # reading_service = SequentialReadingService(dist_service, mp_service)
-    dataloader = DataLoader2(dataset, reading_service=dist_service)
+    dataloader = DataLoader2(dataset, reading_service=None)
     # sampler = torch.utils.data.distributed.DistributedSampler(dataset, rank=rank, shuffle=True)
     # dataloader = DataLoader(dataset, batch_size=batch_size, num_workers=dataloader_num_workers, sampler=sampler)
     return dataloader
@@ -69,3 +69,4 @@ for i in range(3):
     print(i)
     data = next(dataiter)
     print(data)
+    print(data['images'].shape)
