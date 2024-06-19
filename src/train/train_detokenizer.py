@@ -201,10 +201,6 @@ def train():
     elif accelerator.mixed_precision == "bf16":
         weight_dtype = torch.bfloat16
 
-    visual_encoder.to(accelerator.device, dtype=weight_dtype)
-    logger.info('Freeze visual encoder...')
-    visual_encoder.requires_grad_(False)
-
     # if cfg_path.fsdp_plugin is not None:
     #     agent_model = accelerator.prepare(agent_model)
 
@@ -230,8 +226,15 @@ def train():
                     dtype=weight_dtype
                     )
     
+    visual_encoder.to(accelerator.device, dtype=weight_dtype)
+    logger.info('Freeze visual encoder...')
+    visual_encoder.requires_grad_(False)
+    visual_encoder.eval()
+    print('visual_encoder:', visual_encoder.transformer.resblocks[0].training)
+    
     logger.info('Freeze visual vae...')
     vae.requires_grad_(False)
+    vae = vae.eval()
 
     if cfg_path.fsdp_plugin is not None:
         adapter = accelerator.prepare(adapter)
@@ -309,28 +312,27 @@ def train():
                 # TODO[huangzp]: batch 内没有这么多key
                 images = batch['images'].to(accelerator.device) if batch['images'] is not None else None
                 if images is not None:
-                    embeds_gen_mask=batch['embeds_gen_mask'].to(accelerator.device)
-                    embeds_cmp_mask=batch['embeds_cmp_mask'].to(accelerator.device)
+                    # embeds_gen_mask=batch['embeds_gen_mask'].to(accelerator.device)
+                    # embeds_cmp_mask=batch['embeds_cmp_mask'].to(accelerator.device)
                     
-                    embeds_valid_mask = torch.logical_or(embeds_gen_mask, embeds_cmp_mask)
-                    embeds_gen_mask = embeds_gen_mask[embeds_valid_mask]
-                    embeds_cmp_mask = embeds_cmp_mask[embeds_valid_mask]
-                    images = images[embeds_valid_mask]
+                    # embeds_valid_mask = torch.logical_or(embeds_gen_mask, embeds_cmp_mask)
+                    # embeds_gen_mask = embeds_gen_mask[embeds_valid_mask]
+                    # embeds_cmp_mask = embeds_cmp_mask[embeds_valid_mask]
+                    # images = images[embeds_valid_mask]
 
-                    if 'patch_position' in batch:
-                        patch_position = batch['patch_position'].to(accelerator.device) 
-                        patch_position = patch_position[embeds_valid_mask]
-                    else:
-                        patch_position = None
+                    # if 'patch_position' in batch:
+                    #     patch_position = batch['patch_position'].to(accelerator.device) 
+                    #     patch_position = patch_position[embeds_valid_mask]
+                    # else:
+                    # patch_position = None
 
                     if images.shape[0] == 0:
                         images = None
 
                 with torch.no_grad():
                     if images is not None:
-                        image_embeds = visual_encoder(images,
-                                                      batch['patch_position'].to(accelerator.device) if 'patch_position' in batch else None
-                        )
+                        assert 'patch_position' not in batch
+                        image_embeds = visual_encoder(images)
                     else:
                         image_embeds = None
 

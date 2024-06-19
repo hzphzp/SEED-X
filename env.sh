@@ -11,3 +11,5 @@ pip install transformers_stream_generator -i https://mirrors.tencent.com/pypi/si
 pip install hydra-core -i https://mirrors.tencent.com/pypi/simple/
 pip install pyrootutils -i https://mirrors.tencent.com/pypi/simple/
 pip install torchdata -i https://mirrors.tencent.com/pypi/simple/
+pip install wandb -i https://mirrors.tencent.com/pypi/simple/
+wandb login 69672540eb30feaa4b6f38aa2b2aca504e0224ce

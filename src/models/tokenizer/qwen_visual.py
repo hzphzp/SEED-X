@@ -142,6 +142,7 @@ class Resampler(nn.Module):
 
         N = x.shape[1]
         q = self.ln_q(self.query)
+        import pdb; pdb.set_trace()
         out = self.attn(self._repeat(q, N) + self.pos_embed.unsqueeze(1), x + pos_embed.unsqueeze(1), x, attn_mask=attn_mask)[0]
         return out.permute(1, 0, 2)
 
@@ -181,7 +182,7 @@ class VisualAttention(nn.Module):
         # query/key/value: [sq, b, h]
         sq, b, _ = query.size()
 
-        assert query is key, 'Only Support Self-Attention Currently'
+        # assert query is key, f'Only Support Self-Attention Currently, {query.shape}, {key.shape}, {query.device}, {key.device}, {query-key}'
         sk = sq
         mixed_x_layer = self.in_proj(query)
 

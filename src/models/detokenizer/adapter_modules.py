@@ -111,7 +111,7 @@ class SDXLAdapter(nn.Module):
 
         if image_pil is not None:
             image_tensor = self.image_transform(image_pil).unsqueeze(0).to(self.device, dtype=self.dtype)
-
+        print("image_tensor", image_tensor.shape)
         if image_tensor is not None:
             if return_negative:
                 image_tensor_neg = torch.zeros_like(image_tensor)
