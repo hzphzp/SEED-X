@@ -39,7 +39,7 @@ torchrun --nproc_per_node=1 \
     --warmup_steps 500 \
     --min_lr_ratio 0.05 \
     --dataloader_num_workers 4 \
-    --deepspeed_plugin ${PROJ_PATH}/configs/accelerate/deepspeed_stage_2.yaml \ 
+    --deepspeed_plugin ${PROJ_PATH}/configs/accelerate/deepspeed_stage_2.yaml \
     # --deepspeed_plugin ${PROJ_PATH}/configs/accelerate/deepspeed_stage_2_offload.yaml \ 
     # --deepspeed_plugin ${PROJ_PATH}/configs/accelerate/deepspeed_stage_3.yaml \
 
