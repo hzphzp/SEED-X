@@ -14,7 +14,7 @@ mkdir -p $OUTPUT_PATH
 export PYTHONPATH=$PROJ_PATH/proj/peft/src:$PYTHONPATH
 wandb login 69672540eb30feaa4b6f38aa2b2aca504e0224ce
 #torchrun --nproc_per_node=$HOST_GPU_NUM --nnodes=$HOST_NUM --master_addr=$CHIEF_IP --master_port=20008 --node_rank=$INDEX \
-torchrun --nproc_per_node=1 \
+torchrun --nproc_per_node=8 \
     ${PROJ_PATH}/src/train/train_detokenizer.py \
     --image_transform ${PROJ_PATH}/configs/processer/qwen_448_transform.yaml \
     --tokenizer ${PROJ_PATH}/configs/tokenizer/clm_llama_tokenizer_224loc_anyres.yaml \
