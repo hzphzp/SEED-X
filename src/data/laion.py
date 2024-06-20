@@ -48,3 +48,14 @@ def build_laion_tar_images_datapipelines(images_tar_dir, image_transform, batch_
     return datapipe
 
 
+def build_random_image_datapipe(images_tar_dir, image_transform, batch_size=None, *args, **kwargs):
+    import torchvision
+    fake_dataset = torchvision.datasets.FakeData(size = 10000, image_size=(3, 1024, 1024), num_classes=1000)
+    datapipe = dp.iter.IterableWrapper(fake_dataset)
+    datapipe = datapipe.map(lambda x: image_transform(x[0]))
+    datapipe = datapipe.map(lambda x: {'images': x})
+    if batch_size is not None:
+        datapipe = datapipe.batch(batch_size)
+        datapipe = datapipe.collate()
+    return datapipe
+    
