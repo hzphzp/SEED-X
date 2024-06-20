@@ -142,7 +142,7 @@ class Resampler(nn.Module):
 
         N = x.shape[1]
         q = self.ln_q(self.query)
-        import pdb; pdb.set_trace()
+        # import pdb; pdb.set_trace()
         out = self.attn(self._repeat(q, N) + self.pos_embed.unsqueeze(1), x + pos_embed.unsqueeze(1), x, attn_mask=attn_mask)[0]
         return out.permute(1, 0, 2)
 

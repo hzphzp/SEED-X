@@ -349,7 +349,7 @@ def train():
                 #                      ids_cmp_mask=batch['ids_cmp_mask'].to(accelerator.device))
                 
                 # get latent and noise
-                latents = adapter.compute_vae_encodings(images)
+                latents = adapter.compute_vae_encodings(images)['model_input']
                 noise = torch.randn_like(latents)
                 # add noise to latents
                 bsz = latents.shape[0]

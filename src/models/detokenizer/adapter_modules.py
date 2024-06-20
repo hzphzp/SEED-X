@@ -98,7 +98,8 @@ class SDXLAdapter(nn.Module):
     @torch.inference_mode()
     def compute_vae_encodings(self, images):
         pixel_values = images
-        pixel_values = pixel_values.to(memory_format=torch.contiguous_format).float()
+        # pixel_values = pixel_values.to(memory_format=torch.contiguous_format).float()
+        pixel_values = pixel_values.float()
         pixel_values = pixel_values.to(self.vae.device, dtype=self.vae.dtype)
         with torch.no_grad():
             model_input = self.vae.encode(pixel_values).latent_dist.sample()
