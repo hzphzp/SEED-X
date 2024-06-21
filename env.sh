@@ -2,12 +2,16 @@ source /usr/local/Ascend/ascend-toolkit/set_env.sh
 export ASCEND_HOME_PATH=/usr/local/Ascend/ascend-toolkit/latest
 export PYTHONPATH=$PYTHONPATH:/usr/local/Ascend/ascend-toolkit/latest/python/site-packages:/usr/local/Ascend/ascend-toolkit/latest/opp/built-in/op_impl/ai_core/tbe:/usr/local/Ascend/ascend-toolkit/latest/opp/op_impl/built-in/ai_core/tbe
 
+
+this_scripts_path=$(cd `dirname $0`; pwd)
+echo $this_scripts_path
+
+
 cd ~
 ln -s /mnt/wfs/mmshanghai8wfssh/project_mm-base-vision-tj/huangzp data
 
 # this file's dir
-current_dir=$(cd "$(dirname "$0")";pwd)
-cd $current_dir
+cd $this_scripts_path
 ln -s ~/data/pretrained/SEED-X/ pretrained
 # 注意这里需要使用腾讯的镜像, 不需要开proxy, 速度非常快
 pip install transformers_stream_generator -i https://mirrors.tencent.com/pypi/simple/

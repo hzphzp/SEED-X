@@ -3,8 +3,8 @@ source /usr/local/Ascend/ascend-toolkit/set_env.sh
 export ASCEND_HOME_PATH=/usr/local/Ascend/ascend-toolkit/latest
 export PYTHONPATH=$PYTHONPATH:/usr/local/Ascend/ascend-toolkit/latest/python/site-packages:/usr/local/Ascend/ascend-toolkit/latest/opp/built-in/op_impl/ai_core/tbe:/usr/local/Ascend/ascend-toolkit/latest/opp/op_impl/built-in/ai_core/tbe
 
-
-
+ps -elf | grep python3.8 | grep -v grep | awk '{print $4}' | xargs kill -9
+# export ASCEND_LAUNCH_BLOCKING=1
 PROJ_PATH='.'
 exp_name='seed_x_detokenizer'
 OUTPUT_PATH=~/SEED-X/train_output/${exp_name}
@@ -14,11 +14,11 @@ mkdir -p $OUTPUT_PATH
 export PYTHONPATH=$PROJ_PATH/proj/peft/src:$PYTHONPATH
 wandb login 69672540eb30feaa4b6f38aa2b2aca504e0224ce
 #torchrun --nproc_per_node=$HOST_GPU_NUM --nnodes=$HOST_NUM --master_addr=$CHIEF_IP --master_port=20008 --node_rank=$INDEX \
-torchrun --nproc_per_node=4 \
+torchrun --nproc_per_node=8 \
     ${PROJ_PATH}/src/train/train_detokenizer.py \
     --image_transform ${PROJ_PATH}/configs/processer/qwen_448_transform.yaml \
     --tokenizer ${PROJ_PATH}/configs/tokenizer/clm_llama_tokenizer_224loc_anyres.yaml \
-    --diffusion_model_path /home/ethanphuang/data/pretrained/stabilityai/stable-diffusion-xl-base-1.0 \
+    --diffusion_model_path /mnt/wfs/mmshanghai8wfssh/project_mm-base-vision-tj/huangzp/pretrained/stabilityai/stable-diffusion-xl-base-1.0 \
     --adapter_cfg_path configs/sdxl_adapter/sdxl_qwen_vit_resampler_l4_q64_pretrain_no_normalize_fullft.yaml \
     --visual_encoder ${PROJ_PATH}/configs/visual_encoder/qwen_vitg_448.yaml \
     --train_dataset ${PROJ_PATH}/configs/data/sdxl_adapter_finetune.yaml \
