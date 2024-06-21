@@ -215,16 +215,6 @@ def train():
     logger.info('init unet')
     unet = UNet2DConditionModel.from_pretrained(diffusion_model_path, subfolder="unet")
 
-    logger.info('init ip adapter')
-    adapter = hydra.utils.instantiate(adapter_cfg, unet=unet)
-
-    adapter.init_pipe(vae=vae,
-                    scheduler=noise_scheduler,
-                    visual_encoder=visual_encoder,
-                    image_transform=image_transform,
-                    device=accelerator.device, 
-                    dtype=weight_dtype
-                    )
     
     visual_encoder.to(accelerator.device, dtype=weight_dtype)
     logger.info('Freeze visual encoder...')
@@ -235,6 +225,17 @@ def train():
     logger.info('Freeze visual vae...')
     vae.requires_grad_(False)
     vae = vae.eval()
+    
+    logger.info('init ip adapter')
+    adapter = hydra.utils.instantiate(adapter_cfg, unet=unet)
+
+    adapter.init_pipe(vae=vae,
+                    scheduler=noise_scheduler,
+                    visual_encoder=visual_encoder,
+                    image_transform=image_transform,
+                    device=accelerator.device, 
+                    dtype=weight_dtype
+                    )
 
     if cfg_path.fsdp_plugin is not None:
         adapter = accelerator.prepare(adapter)
