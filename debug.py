@@ -72,40 +72,65 @@ from torchdata.dataloader2 import DataLoader2, MultiProcessingReadingService, Di
 #     print(data['images'].shape)
 
 
+# import torch
+# import torch.nn as nn
+
+# # 参数
+# embed_dim = 4096
+# num_heads = 8  # 确保可整除4096
+
+# # 创建 MultiheadAttention 模块
+# attn = nn.MultiheadAttention(embed_dim=embed_dim, num_heads=num_heads, batch_first=False)
+
+# # 模拟输入数据
+# batch_size = 8
+# seq_len_q = 256
+# seq_len_kv = 1024
+
+# # query, key, value
+# q = torch.randn(256, 4096)  # 注意维度顺序
+# x = torch.randn(1024, 8, 4096)
+# s_pos_embed = torch.randn(256, 4096)
+# pos_embed = torch.randn(1024, 4096)
+# N = 8
+
+# # 模拟位置编码和重复操作
+# def _repeat(query, N: int):
+#     return query.unsqueeze(1).repeat(1, N, 1)
+
+# # 调整位置编码的形状并加到查询和键值对上
+# q_pos = _repeat(q, 8) + pos_embed[:seq_len_q].unsqueeze(1)
+# x_pos = x + pos_embed.unsqueeze(1)
+
+# # 注意力掩码（如果有的话）
+# attn_mask = None  # 你可以定义一个适当的掩码
+
+# # 执行多头注意力
+# output = attn(_repeat(q, N) + s_pos_embed.unsqueeze(1), x + pos_embed.unsqueeze(1), x, attn_mask=attn_mask)[0]
+
+# print("Output shape:", output.shape)
+
+
+# check F.pad is 
 import torch
-import torch.nn as nn
+import torch.nn.functional as F
 
-# 参数
-embed_dim = 4096
-num_heads = 8  # 确保可整除4096
+# 1. 1D padding
+x = torch.randn(2, 3)
+print(x)
+# pad with 1
+x_pad = F.pad(x, (1, 1), mode="constant", value=0)
+print(x_pad)
+# pad with 0
+x_pad = F.pad(x, (1, 1), mode="constant", value=1)
+print(x_pad)
 
-# 创建 MultiheadAttention 模块
-attn = nn.MultiheadAttention(embed_dim=embed_dim, num_heads=num_heads, batch_first=False)
-
-# 模拟输入数据
-batch_size = 8
-seq_len_q = 256
-seq_len_kv = 1024
-
-# query, key, value
-q = torch.randn(256, 4096)  # 注意维度顺序
-x = torch.randn(1024, 8, 4096)
-s_pos_embed = torch.randn(256, 4096)
-pos_embed = torch.randn(1024, 4096)
-N = 8
-
-# 模拟位置编码和重复操作
-def _repeat(query, N: int):
-    return query.unsqueeze(1).repeat(1, N, 1)
-
-# 调整位置编码的形状并加到查询和键值对上
-q_pos = _repeat(q, 8) + pos_embed[:seq_len_q].unsqueeze(1)
-x_pos = x + pos_embed.unsqueeze(1)
-
-# 注意力掩码（如果有的话）
-attn_mask = None  # 你可以定义一个适当的掩码
-
-# 执行多头注意力
-output = attn(_repeat(q, N) + s_pos_embed.unsqueeze(1), x + pos_embed.unsqueeze(1), x, attn_mask=attn_mask)[0]
-
-print("Output shape:", output.shape)
+# 2. 2D padding
+x = torch.randn(2, 3, 4)
+print(x)
+# pad with 1
+x_pad = F.pad(x, (1, 1, 1, 1), mode="constant", value=0)
+print(x_pad)
+# pad with 0
+x_pad = F.pad(x, (1, 1, 1, 1), mode="constant", value=1)
+print(x_pad)
