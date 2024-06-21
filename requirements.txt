@@ -13,3 +13,4 @@ transformers_stream_generator
 torchdata
 peft
 braceexpand
+controlnet_aux
