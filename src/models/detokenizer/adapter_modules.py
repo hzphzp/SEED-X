@@ -99,6 +99,7 @@ class SDXLAdapter(nn.Module):
     def compute_vae_encodings(self, images):
         pixel_values = images
         # pixel_values = pixel_values.to(memory_format=torch.contiguous_format).float()
+        pixel_values = pixel_values.contiguous().float()
         pixel_values = pixel_values.float()
         pixel_values = pixel_values.to(self.vae.device, dtype=self.vae.dtype)
         with torch.no_grad():

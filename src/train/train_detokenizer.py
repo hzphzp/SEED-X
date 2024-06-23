@@ -155,7 +155,8 @@ def train():
     # ddp_kwargs = DistributedDataParallelKwargs(find_unused_parameters=True)
     accelerator = Accelerator(
         mixed_precision=args.mixed_precision,
-        log_with=['tensorboard', 'wandb'] if os.environ.get('DEBUG_FLAG', 'False') != 'True' else ['tensorboard'],
+        log_with=['tensorboard'],
+        # log_with=['tensorboard', 'wandb'] if os.environ.get('DEBUG_FLAG', 'False') != 'True' else ['tensorboard'],
         project_config=project_config,
         gradient_accumulation_steps=args.gradient_accumulation_steps,
         step_scheduler_with_optimizer=False,
@@ -269,7 +270,7 @@ def train():
                                  tokenizer=tokenizer_cfg,
                                  train_dataset=train_dataset_cfg,
                                  train_args=args)
-    accelerator.init_trackers(project_name="Chinese Seed X",
+    accelerator.init_trackers(project_name="seed_x_cn",
                               init_kwargs={"wandb": {
                                   "config": config_record,
                                   "name": args.expr_name,
@@ -310,7 +311,6 @@ def train():
 
         for step, batch in enumerate(train_dataloader):
             with accelerator.accumulate(adapter):
-                # TODO[huangzp]: batch 内没有这么多key
                 images = batch['images'].to(accelerator.device) if batch['images'] is not None else None
                 if images is not None:
                     # embeds_gen_mask=batch['embeds_gen_mask'].to(accelerator.device)
