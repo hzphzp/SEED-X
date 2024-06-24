@@ -111,31 +111,37 @@ from torchdata.dataloader2 import DataLoader2, MultiProcessingReadingService, Di
 # print("Output shape:", output.shape)
 
 
-# check F.pad is 
-# import torch
-# import torch.nn.functional as F
+# check F.pad ops
+import torch
+try:
+    import torch_npu
+    from torch_npu.contrib import transfer_to_npu
+    print('use Ascend NPU')
+except:
+    print('use NVIDIA GPU')
+import torch.nn.functional as F
 
-# # 1. 1D padding
-# x = torch.randn(2, 3)
-# print(x)
-# # pad with 1
-# x_pad = F.pad(x, (1, 1), mode="constant", value=0)
-# print(x_pad)
-# # pad with 0
-# x_pad = F.pad(x, (1, 1), mode="constant", value=1)
-# print(x_pad)
+# 1. 1D padding
+x = torch.randn(2, 3).to('npu').to(torch.bfloat16)
+print(x)
+# pad with 1
+x_pad = F.pad(x, (1, 1), mode="constant", value=0.)
+print(x_pad)
+# pad with 0
+x_pad = F.pad(x, (1, 1), mode="constant", value=1.)
+print(x_pad)
 
-# # 2. 2D padding
-# x = torch.randn(2, 3, 4)
-# print(x)
-# # pad with 1
-# x_pad = F.pad(x, (1, 1, 1, 1), mode="constant", value=0)
-# print(x_pad)
-# # pad with 0
-# x_pad = F.pad(x, (1, 1, 1, 1), mode="constant", value=1)
-# print(x_pad)
+# 2. 2D padding
+x = torch.randn(2, 3, 4).to('npu').to(torch.bfloat16)
+print(x)
+# pad with 1
+x_pad = F.pad(x, (1, 1, 1, 1), mode="constant", value=0.)
+print(x_pad)
+# pad with 0
+x_pad = F.pad(x, (1, 1, 1, 1), mode="constant", value=1.)
+print(x_pad)
 
-pixel_values = torch.randn(2, 3, 4).to('npu')
-pixel_values = pixel_values.contiguous().float()
-print(pixel_values)
-print(pixel_values.is_contiguous())
+# pixel_values = torch.randn(2, 3, 4).to('npu')
+# pixel_values = pixel_values.contiguous().float()
+# print(pixel_values)
+# print(pixel_values.is_contiguous())

@@ -57,7 +57,7 @@ class TrainingArguments:
         metadata={"help": "The output directory where the model predictions and checkpoints will be written."}, )
     resume_from_checkpoint: Optional[str] = field(
         default=None, metadata={"help": "The path to a folder with a valid checkpoint for your model."})
-    resume_steps: Optional[int] = field(default=None, metadata={"help": "The training sterps of saved checkpoint"})
+    resume_steps: Optional[int] = field(default=None, metadata={"help": "The training steps of saved checkpoint"})
     batch_size: Optional[int] = field(default=60, metadata={"help": "The training batch size"})
     learning_rate: float = field(default=5e-5, metadata={"help": "The initial learning rate for AdamW."})
     weight_decay: float = field(default=0.0, metadata={"help": "Weight decay for AdamW if we apply some."})

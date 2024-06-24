@@ -32,8 +32,8 @@ def build_laion_tar_images_datapipelines(images_tar_dir, image_transform, batch_
     datapipe = datapipe.shuffle()
     datapipe = datapipe.sharding_filter()
     datapipe = datapipe.open_files(mode='b')
-    datapipe = datapipe.load_from_tar()
-    # datapipe = TarArchiveLoaderWoException(datapipe)
+    # datapipe = datapipe.load_from_tar()
+    datapipe = TarArchiveLoaderWoException(datapipe)
     # filter out non-image content
     datapipe = datapipe.filter(lambda x: x[0].endswith('.jpg') or x[0].endswith('.jpeg') or x[0].endswith('.png'))
     # convert image content to PIL.Image
