@@ -58,6 +58,7 @@ class TrainingArguments:
     resume_from_checkpoint: Optional[str] = field(
         default=None, metadata={"help": "The path to a folder with a valid checkpoint for your model."})
     resume_steps: Optional[int] = field(default=None, metadata={"help": "The training sterps of saved checkpoint"})
+    eval_steps: Optional[int] = field(default=1000, metadata={"help": "Number of updates steps before the evaluation."})
     batch_size: Optional[int] = field(default=60, metadata={"help": "The training batch size"})
     learning_rate: float = field(default=5e-5, metadata={"help": "The initial learning rate for AdamW."})
     weight_decay: float = field(default=0.0, metadata={"help": "Weight decay for AdamW if we apply some."})
@@ -402,7 +403,17 @@ def train():
             metric = {key: (format(value, ".6f") if isinstance(value, float) else value) for key, value in metric.items()}
             if accelerator.is_main_process:
                 tqdm.write(str(metric))
-
+                if global_step % args.eval_steps in [0, 1, 2, 3]:
+                    adapter.eval()
+                    # sample images and log recon images
+                    generated_images = adapter.generate(image_tensor=images, num_inference_steps=50)
+                    # generated_images[0].save(save_path)
+                    # save to accelerate tensorboard
+                    # save transformed images tensors
+                    save_input_image = images[0].detach().cpu().numpy().transpose(1, 2, 0)
+                    accelerator.save_image(save_input_image, f"input_images/{global_step}_origin.png")
+                    accelerator.save_image(generated_images[0], f"recon_images/{global_step}.png")
+                    adapter.train()
             if global_step >= args.max_steps:
                 break
 
