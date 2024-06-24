@@ -135,3 +135,4 @@ for idx, batch in enumerate(train_dataloader):
 # # pixel_values = pixel_values.contiguous().float()
 # # print(pixel_values)
 # # print(pixel_values.is_contiguous())
+
