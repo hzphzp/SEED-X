@@ -135,17 +135,3 @@ from torchdata.dataloader2 import DataLoader2, MultiProcessingReadingService, Di
 # # pixel_values = pixel_values.contiguous().float()
 # # print(pixel_values)
 # # print(pixel_values.is_contiguous())
-
-from accelerate import Accelerator
-from accelerate.utils import ProjectConfiguration
-project_config = ProjectConfiguration(project_dir='~/data/tmp', logging_dir=os.path.join('~/data/tmp', 'logs'))
-accelerator = Accelerator(
-    mixed_precision=False,
-    log_with=['tensorboard', 'wandb'] if os.environ.get('DEBUG_FLAG', 'False') != 'True' else ['tensorboard'],
-    project_config=project_config,
-    gradient_accumulation_steps=0.01,
-    step_scheduler_with_optimizer=False,
-    # kwargs_handlers=[ddp_kwargs],
-)
-accelerator.wait_for_everyone()
-accelerator.init_trackers(project_name="Chinese Seed X")
