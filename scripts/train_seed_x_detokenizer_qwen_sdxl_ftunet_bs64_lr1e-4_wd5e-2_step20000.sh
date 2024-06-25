@@ -44,8 +44,9 @@ torchrun --nproc_per_node=8 \
     --min_lr_ratio 0.05 \
     --dataloader_num_workers 4 \
     --deepspeed_plugin ${PROJ_PATH}/configs/accelerate/deepspeed_stage_2_fp32.yaml \
-    --resume_steps 6703 \
-    --resume_from_checkpoint /mnt/wfs/mmshanghai8wfssh/project_mm-base-vision-tj/huangzp/training_logs/SEED-X/seed_x_detokenizer/checkpoint-6000 # 不要最后这个 pytorch_model/mp_rank_00_model_states.pt
+    --eval_steps 10 \
+    --resume_steps 9000 \
+    --resume_from_checkpoint /mnt/wfs/mmshanghai8wfssh/project_mm-base-vision-tj/huangzp/training_logs/SEED-X/train_seed_x_detokenizer_qwen_sdxl_ftunet_bs64_lr1e-4_wd5e-2_step20000/checkpoint-9000 # 不要最后这个 pytorch_model/mp_rank_00_model_states.pt
     # --deepspeed_plugin ${PROJ_PATH}/configs/accelerate/deepspeed_stage_2_offload.yaml \ 
     # --deepspeed_plugin ${PROJ_PATH}/configs/accelerate/deepspeed_stage_3.yaml \
 

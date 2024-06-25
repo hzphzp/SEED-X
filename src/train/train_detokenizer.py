@@ -411,8 +411,15 @@ def train():
                     # save to accelerate tensorboard
                     # save transformed images tensors
                     save_input_image = images[0].detach().cpu().numpy().transpose(1, 2, 0)
-                    accelerator.save_image(save_input_image, f"input_images/{global_step}_origin.png")
-                    accelerator.save_image(generated_images[0], f"recon_images/{global_step}.png")
+                    print(save_input_image.shape)
+                    print(save_input_image.min(), save_input_image.max())
+                    save_input_image = Image.fromarray(save_input_image)
+                    # accelerator.log(save_input_image, f"input_images/{global_step}_origin.png")
+                    # accelerator.log(generated_images[0], f"recon_images/{global_step}.png")
+                    for tracker in accelerator.trackers:
+                        if tracker.name == "tensorboard":
+                            tracker.writer.add_image(f"input_images/{global_step}_origin", save_input_image, global_step)
+                            tracker.writer.add_image(f"recon_images/{global_step}", generated_images[0], global_step)
                     adapter.train()
             if global_step >= args.max_steps:
                 break
