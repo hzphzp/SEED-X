@@ -84,9 +84,6 @@ def outpainting_pipe(init_image, zoom):
 
     # init_image = init_image.resize((512, 512))
     conditioning_image, outpaint_mask = create_outpainting_image_and_mask(init_image, zoom)
-    init_image.show()
-    conditioning_image.show()
-    outpaint_mask.show()
 
     prompt = ""
     generator = torch.Generator()
@@ -113,36 +110,45 @@ def outpainting_pipe(init_image, zoom):
         height=height,
         width=width,
         generator=generator.manual_seed(seed),
+        strength=0.99,
     )
-    return output.images[0]
+    return output.images[0], init_image, conditioning_image, outpaint_mask
 
 def outpainting_pipe_times(init_image, zoom, times):
     image = init_image
     zoom_step = [zoom[0] ** (1 / times), zoom[1] ** (1 / times)]
     for i in range(times-1):
-        image = outpainting_pipe(image, zoom_step)
+        image, _, _, _ = outpainting_pipe(image, zoom_step)
         image.show()
         # 去掉边缘30 个 pixels
         image = image.crop((30, 30, image.width-30, image.height-30))
         image.show()
-    image = outpainting_pipe(image, zoom_step)
+    image, _, _, _ = outpainting_pipe(image, zoom_step)
     return image
 
 init_image = load_image("images/outpainting1.png")
-output_image = outpainting_pipe_times(init_image, [4, 3], 5)
+output_image, _, _, _ = outpainting_pipe(init_image, [4, 3])
+output_image.save('out_image.png')
 # import os
 # image_dir = 'images/outpainting/'
+# os.makedirs('images/outpainting_results', exist_ok=True)
+# os.makedirs('images/outpainting_condition', exist_ok=True)
+# os.makedirs('images/outpainting_mask', exist_ok=True)
 # for image_name in os.listdir(image_dir):
 #     image_path = os.path.join(image_dir, image_name)
 #     init_image = load_image(image_path)
-#     output_image = outpainting_pipe(init_image, 1.5)
-#     output_image.save(f'images/outpainting/{image_name}_affine_1_5.png')
-#     output_image = outpainting_pipe(init_image, [4, 3])
-#     output_image.save(f'images/outpainting/{image_name}_affine_4_3.png')
-#     output_image = outpainting_pipe_times(init_image, [4, 3], 2)
-#     output_image.save(f'images/outpainting/{image_name}_affine_4_3_x2.png')
-#     output_image = outpainting_pipe_times(init_image, [4, 3], 3)
-#     output_image.save(f'images/outpainting/{image_name}_affine_4_3_x3.png')
-#     output_image = outpainting_pipe_times(init_image, [4, 3], 5)
-#     output_image.save(f'images/outpainting/{image_name}_affine_4_3_x5.png')
+#     output_image, init_image, conditioning_image, outpaint_mask = outpainting_pipe(init_image, 1.5 )
+#     output_image.save(f'images/outpainting_results/{image_name}_affine_1_5.png')
+#     conditioning_image.save(f'images/outpainting_condition/{image_name}_affine_1_5_conditioning.png')
+#     outpaint_mask.save(f'images/outpainting_mask/{image_name}_affine_1_5_mask.png')
+#     output_image, init_image, conditioning_image, outpaint_mask = outpainting_pipe(init_image, [4, 3] )
+#     output_image.save(f'images/outpainting_results/{image_name}_affine_4_3.png')
+#     conditioning_image.save(f'images/outpainting_condition/{image_name}_affine_4_3_conditioning.png')
+#     outpaint_mask.save(f'images/outpainting_mask/{image_name}_affine_4_3_mask.png')
+#     # output_image = outpainting_pipe_times(init_image, [4, 3], 2)
+#     # output_image.save(f'images/outpainting/{image_name}_affine_4_3_x2.png')
+#     # output_image = outpainting_pipe_times(init_image, [4, 3], 3)
+#     # output_image.save(f'images/outpainting/{image_name}_affine_4_3_x3.png')
+#     # output_image = outpainting_pipe_times(init_image, [4, 3], 5)
+#     # output_image.save(f'images/outpainting/{image_name}_affine_4_3_x5.png')
     
