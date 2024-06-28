@@ -1,16 +1,14 @@
-# !pip install invisible_watermark transformers accelerate safetensors kornia
-# !pip install git+https://github.com/huggingface/diffusers.git
-# !pip install huggingface_hub
-
-
-
 import torch
 from torchvision.transforms import ToTensor, ToPILImage
 from kornia.geometry.transform import get_affine_matrix2d, warp_affine
-
+import PIL
+from diffusers.utils import load_image
+import PIL
+from diffusers.utils import load_image
+from PIL import Image
 
 # Zooms out of a given image, and creates an outpainting mask for the external area.
-def create_outpainting_image_and_mask(image, zoom):
+def create_outpainting_image_and_mask(image, zoom, padding_mode="border"):
     # 注意这里的zoom 是 扩大的比例, 如150% 
     # if zoom is not List
     if isinstance(zoom, list):
@@ -49,13 +47,55 @@ def create_outpainting_image_and_mask(image, zoom):
         image_tensor,
         M=M[:, :2],
         dsize=(new_h, new_w),
-        padding_mode="border"
+        padding_mode=padding_mode
     )
 
     output_mask = ToPILImage()(mask[0])
     output_image = ToPILImage()(transformed_image_tensor[0])
 
     return output_image, output_mask
+
+def create_outpainting_image_and_mask_fix_corner(image, zoom):
+    if type(zoom) == float or type(zoom) == int:
+        zoom = [zoom, zoom]
+    output_image, output_mask = create_outpainting_image_and_mask(image, zoom, padding_mode="border")
+    # 先横向扩展
+    zoom1 = [1, zoom[1]]
+    output_image1, output_mask1 = create_outpainting_image_and_mask(image, zoom1, padding_mode="border")
+    # 然后纵向扩展
+    zoom2 = [zoom[0], 1]
+    output_image2, output_mask2 = create_outpainting_image_and_mask(output_image1, zoom2, padding_mode="reflection")
+    # 先纵向扩展
+    zoom3 = [zoom[0], 1]
+    output_image3, output_mask3 = create_outpainting_image_and_mask(image, zoom3, padding_mode="border")
+    # 再横向扩展
+    zoom4 = [1, zoom[1]]
+    output_image4, output_mask4 = create_outpainting_image_and_mask(output_image3, zoom4, padding_mode="reflection")
+    
+    # mask 1 value represent padding areas
+    # PIL images inplement output_image = (output_mask4 * output_image2 + output_mask2 * output_image4) * output_mask + output_image * (1 - output_mask)
+    # first convert to numpy
+    from torchvision.transforms import ToTensor, ToPILImage
+    output_image = ToTensor()(output_image)
+    output_image2 = ToTensor()(output_image2)
+    output_image3 = ToTensor()(output_image3)
+    output_image4 = ToTensor()(output_image4)
+    output_mask = ToTensor()(output_mask)
+    output_mask1 = ToTensor()(output_mask1)
+    output_mask2 = ToTensor()(output_mask2)
+    output_mask3 = ToTensor()(output_mask3)
+    output_mask4 = ToTensor()(output_mask4)
+    # print(output_mask4)
+    output_image = output_image2 * output_mask4 + output_image4 *(1 - output_mask4)
+    # corner_image = (output_mask4 * output_image2 + output_mask2 * output_image4) * output_mask4 * output_mask2 / 2
+    # corner_image_mask = output_mask4 * output_mask2
+    # output_image = corner_image +  output_image * (1 - corner_image_mask)
+    output_image = ToPILImage()(output_image)
+    output_mask = ToPILImage()(output_mask)
+    return output_image, output_mask
+    
+    # return the mean of output_image and output_image2
+    # return Image.blend(output_image, output_image2, 0.2), output_mask
 
 import PIL
 from diffusers.utils import load_image
@@ -83,7 +123,7 @@ pipe = AutoPipelineForInpainting.from_pretrained("diffusers/stable-diffusion-xl-
 def outpainting_pipe(init_image, zoom):
 
     # init_image = init_image.resize((512, 512))
-    conditioning_image, outpaint_mask = create_outpainting_image_and_mask(init_image, zoom)
+    conditioning_image, outpaint_mask = create_outpainting_image_and_mask_fix_corner(init_image, zoom)
 
     prompt = ""
     generator = torch.Generator()
@@ -110,7 +150,7 @@ def outpainting_pipe(init_image, zoom):
         height=height,
         width=width,
         generator=generator.manual_seed(seed),
-        strength=0.99,
+        # strength=0.99,
     )
     return output.images[0], init_image, conditioning_image, outpaint_mask
 
@@ -126,29 +166,32 @@ def outpainting_pipe_times(init_image, zoom, times):
     image, _, _, _ = outpainting_pipe(image, zoom_step)
     return image
 
-init_image = load_image("images/outpainting1.png")
-output_image, _, _, _ = outpainting_pipe(init_image, [4, 3])
-output_image.save('out_image.png')
-# import os
-# image_dir = 'images/outpainting/'
-# os.makedirs('images/outpainting_results', exist_ok=True)
-# os.makedirs('images/outpainting_condition', exist_ok=True)
-# os.makedirs('images/outpainting_mask', exist_ok=True)
-# for image_name in os.listdir(image_dir):
-#     image_path = os.path.join(image_dir, image_name)
-#     init_image = load_image(image_path)
-#     output_image, init_image, conditioning_image, outpaint_mask = outpainting_pipe(init_image, 1.5 )
-#     output_image.save(f'images/outpainting_results/{image_name}_affine_1_5.png')
-#     conditioning_image.save(f'images/outpainting_condition/{image_name}_affine_1_5_conditioning.png')
-#     outpaint_mask.save(f'images/outpainting_mask/{image_name}_affine_1_5_mask.png')
-#     output_image, init_image, conditioning_image, outpaint_mask = outpainting_pipe(init_image, [4, 3] )
-#     output_image.save(f'images/outpainting_results/{image_name}_affine_4_3.png')
-#     conditioning_image.save(f'images/outpainting_condition/{image_name}_affine_4_3_conditioning.png')
-#     outpaint_mask.save(f'images/outpainting_mask/{image_name}_affine_4_3_mask.png')
-#     # output_image = outpainting_pipe_times(init_image, [4, 3], 2)
-#     # output_image.save(f'images/outpainting/{image_name}_affine_4_3_x2.png')
-#     # output_image = outpainting_pipe_times(init_image, [4, 3], 3)
-#     # output_image.save(f'images/outpainting/{image_name}_affine_4_3_x3.png')
-#     # output_image = outpainting_pipe_times(init_image, [4, 3], 5)
-#     # output_image.save(f'images/outpainting/{image_name}_affine_4_3_x5.png')
+# init_image = load_image("images/outpainting1.png")
+# output_image, init_image, condition_image, mask_image = outpainting_pipe(init_image, [4, 3])
+# output_image.save('out_image.png')
+# init_image.save('init_image.png')
+# condition_image.save('condition_image.png')
+# mask_image.save('mask_image.png')
+import os
+image_dir = 'images/outpainting/'
+os.makedirs('images/outpainting_results', exist_ok=True)
+os.makedirs('images/outpainting_condition', exist_ok=True)
+os.makedirs('images/outpainting_mask', exist_ok=True)
+for image_name in os.listdir(image_dir):
+    image_path = os.path.join(image_dir, image_name)
+    init_image = load_image(image_path)
+    output_image, init_image, conditioning_image, outpaint_mask = outpainting_pipe(init_image, 1.5 )
+    output_image.save(f'images/outpainting_results/{image_name}_affine_1_5.png')
+    conditioning_image.save(f'images/outpainting_condition/{image_name}_affine_1_5_conditioning.png')
+    outpaint_mask.save(f'images/outpainting_mask/{image_name}_affine_1_5_mask.png')
+    output_image, init_image, conditioning_image, outpaint_mask = outpainting_pipe(init_image, [4, 3] )
+    output_image.save(f'images/outpainting_results/{image_name}_affine_4_3.png')
+    conditioning_image.save(f'images/outpainting_condition/{image_name}_affine_4_3_conditioning.png')
+    outpaint_mask.save(f'images/outpainting_mask/{image_name}_affine_4_3_mask.png')
+    # output_image = outpainting_pipe_times(init_image, [4, 3], 2)
+    # output_image.save(f'images/outpainting/{image_name}_affine_4_3_x2.png')
+    # output_image = outpainting_pipe_times(init_image, [4, 3], 3)
+    # output_image.save(f'images/outpainting/{image_name}_affine_4_3_x3.png')
+    # output_image = outpainting_pipe_times(init_image, [4, 3], 5)
+    # output_image.save(f'images/outpainting/{image_name}_affine_4_3_x5.png')
     
